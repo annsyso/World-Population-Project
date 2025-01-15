@@ -1,0 +1,178 @@
+#checking for duplicates based on creating unique identifiers using the `country` and `year` columns and filtering data where the COUNT is >1
+
+SELECT Country,
+Year,
+COUNT(CONCAT(Country, Year))
+FROM worldlifeexpectancy
+GROUP BY Country, Year
+HAVING COUNT(CONCAT(Country, Year)) > 1
+;
+
+#removing the duplicated data
+
+DELETE FROM worldlifeexp_backup
+WHERE 
+Row_ID IN (
+  SELECT Row_ID
+  FROM (
+    SELECT Country,
+    Year,
+    Row_ID,
+    CONCAT(Country, Year) AS unq_cunt,
+    ROW_NUMBER() OVER(PARTITION BY CONCAT(Country, Year) ORDER BY CONCAT(Country, Year)) AS row_num
+    FROM worldlifeexp_backup
+    ) AS count_table
+  WHERE row_num > 1
+  );
+
+#checking to see where `status ` data is blank
+
+SELECT *
+FROM worldlifeexp_backup
+WHERE Status = ''
+;
+
+#using a self-join to update status
+
+UPDATE worldlifeexp_backup t1
+JOIN worldlifeexp_backup t2
+	ON t1.Country = t2.Country
+SET t1.Status = 'Developing'
+WHERE t1.Status = ''
+AND t2.Status <> ''
+AND t2.Status = 'Developing'
+;
+
+#checking where `life expectancy ` is blank and updating the data with an average
+
+SELECT t1.Country, t1.Year, t1.`Life expectancy`,
+t2.Country, t2.Year, t2.`Life expectancy`,
+t3.Country, t3.Year, t3.`Life expectancy`,
+ROUND((t2.`Life expectancy` + t3.`Life expectancy` / 2), 1) AS avg_life_exp
+FROM worldlifeexpectancy t1
+JOIN worldlifeexpectancy t2
+	ON t1.Country = t2.Country
+    AND t1.Year = t2.Year - 1
+JOIN worldlifeexpectancy t3
+	ON t1.Country = t3.Country
+    AND t1.Year = t2.Year + 1
+WHERE t1.`Life expectancy` = ''
+;
+
+UPDATE worldlifeexpectancy t1
+JOIN worldlifeexpectancy t2
+	ON t1.Country = t2.Country
+    AND t1.Year = t2.Year - 1
+JOIN worldlifeexpectancy t3
+	ON t1.Country = t3.Country
+    AND t1.Year = t2.Year + 1
+SET t1.`Life expectancy` = ROUND((t2.`Life expectancy` + t3.`Life expectancy` / 2), 1)
+WHERE t1.`Life expectancy` = ''
+;
+
+#Looking at life expectancy - how each country has changed their life exp? How many years did it go up? (rounded to the closest year). Identify the difference and which country life expectancy went up the most.
+
+SELECT Country,
+ROUND(MIN(`Life expectancy`), 0) AS min_life_exp,
+ROUND(MAX(`Life expectancy`), 0) AS max_life_exp,
+ROUND(MAX(`Life expectancy`) - MIN(`Life expectancy`), 0) AS life_exp_diff
+FROM worldlifeexpectancy
+GROUP BY Country
+HAVING min_life_exp <> 0
+AND max_life_exp <> 0
+ORDER BY life_exp_diff DESC
+;
+
+#exploring how life expectancy increased across the world over the years.
+
+SELECT Year,
+ROUND(AVG(`Life expectancy`), 0)
+FROM worldlifeexpectancy
+WHERE `Life expectancy` <> 0
+GROUP BY Year
+ORDER BY Year
+;
+
+#exploring the correlation between GDP and life exp.
+
+SELECT Country,
+ROUND(AVG(`Life expectancy`), 0) AS avg_life_exp,
+CONCAT(ROUND(AVG(GDP), 0),' million') AS avg_gdp
+FROM worldlifeexpectancy
+WHERE `Life expectancy` <> 0
+AND GDP <> 0
+GROUP BY Country
+ORDER BY avg_life_exp DESC
+;
+
+#exploring how the life exp relates to adult mortality, infant death, and under-five death.
+
+SELECT Country,
+ROUND(AVG(`Life expectancy`), 0) AS avg_life_exp,
+ROUND(AVG(GDP), 0) AS avg_gdp,
+ROUND(AVG(`Adult Mortality`), 1) AS avg_adult_mort,
+ROUND(AVG(`infant deaths`), 1) AS avg_inf_death,
+ROUND(AVG(`under-five deaths`), 1) AS avg_under_5_death
+FROM worldlifeexpectancy
+WHERE`Life expectancy` <> 0
+AND GDP <> 0
+AND `Adult Mortality`<> 0
+AND `infant deaths` <> 0
+AND `under-five deaths` <> 0
+GROUP BY Country
+ORDER BY avg_life_exp DESC
+;
+
+#this code gives you the numbers.
+#Now adding case statements to make the data more readable for patterns
+
+#first, find the AVG of each category to see what number to break
+
+SELECT AVG(`Adult Mortality`)
+FROM worldlifeexpectancy
+;
+#Returns 164.2, so any adult more > 164 is high and under is lower.
+#do for all columns to check pattern
+
+SELECT AVG(`Adult Mortality`),
+AVG(`infant deaths`),
+AVG(`under-five deaths`)
+FROM worldlifeexpectancy
+;
+
+# infant > 30 and under five > 42
+#adding CASE statements for pattern recognition
+
+SELECT Country,
+ROUND(AVG(`Life expectancy`), 0) AS avg_life_exp,
+ROUND(AVG(GDP), 0) AS avg_gdp,
+CASE
+	WHEN ROUND(AVG(`Adult Mortality`), 0) > 164 THEN 'high adult death' ELSE 'low adult death'
+END AS avg_adult_mort,
+CASE
+	WHEN ROUND(AVG(`infant deaths`), 1) > 30 THEN 'high infant death' ELSE 'low infant death'
+END AS avg_inf_death,
+CASE
+	WHEN ROUND(AVG(`under-five deaths`), 1) > 42 THEN 'high under5 death' ELSE 'low under5 death'
+END AS avg_under_5_death
+FROM worldlifeexpectancy
+WHERE`Life expectancy` <> 0
+AND GDP <> 0
+AND `Adult Mortality`<> 0
+AND `infant deaths` <> 0
+AND `under-five deaths` <> 0
+GROUP BY Country
+ORDER BY avg_life_exp DESC
+;
+
+#exploring rolling totals for countries (ex. USA)
+
+SELECT Country,
+Year,
+`Adult Mortality`,
+SUM(`Adult Mortality`) OVER (PARTITION BY Country ORDER BY Year) AS rolling_total
+FROM worldlifeexpectancy
+WHERE Country LIKE '%United States%'
+ORDER BY Country, Year
+;
+
