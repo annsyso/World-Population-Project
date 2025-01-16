@@ -74,7 +74,8 @@ SET t1.`Life expectancy` = ROUND((t2.`Life expectancy` + t3.`Life expectancy` / 
 WHERE t1.`Life expectancy` = ''
 ;
 
-#Looking at life expectancy - how each country has changed their life exp? How many years did it go up? (rounded to the closest year). Identify the difference and which country life expectancy went up the most.
+-- Life Expectancy Changes by Country
+-- Purpose: Calculates the minimum, maximum, and the difference in life expectancy for each country and identifies the countries with the largest changes in life expectancy over time.
 
 SELECT Country,
 ROUND(MIN(`Life expectancy`), 0) AS min_life_exp,
@@ -87,7 +88,8 @@ AND max_life_exp <> 0
 ORDER BY life_exp_diff DESC
 ;
 
-#exploring how life expectancy increased across the world over the years.
+-- Global Average Life Expectancy by Year
+-- Purpose: Calculates the global average life expectancy for each year and tracks its change over time.
 
 SELECT Year,
 ROUND(AVG(`Life expectancy`), 0)
@@ -97,7 +99,8 @@ GROUP BY Year
 ORDER BY Year
 ;
 
-#exploring the correlation between GDP and life exp.
+-- Average Life Expectancy and GDP by Country
+-- Purpose: Calculates the average life expectancy and GDP for each country, and formats the GDP in millions.
 
 SELECT Country,
 ROUND(AVG(`Life expectancy`), 0) AS avg_life_exp,
@@ -109,7 +112,8 @@ GROUP BY Country
 ORDER BY avg_life_exp DESC
 ;
 
-#exploring how the life exp relates to adult mortality, infant death, and under-five death.
+-- Detailed Averages for Mortality and GDP by Country
+-- Purpose: Calculates detailed statistics for each country, including life expectancy, GDP, adult mortality, infant deaths, and under-five deaths.
 
 SELECT Country,
 ROUND(AVG(`Life expectancy`), 0) AS avg_life_exp,
@@ -127,25 +131,8 @@ GROUP BY Country
 ORDER BY avg_life_exp DESC
 ;
 
-#this code gives you the numbers.
-#Now adding case statements to make the data more readable for patterns
-
-#first, find the AVG of each category to see what number to break
-
-SELECT AVG(`Adult Mortality`)
-FROM worldlifeexpectancy
-;
-#Returns 164.2, so any adult more > 164 is high and under is lower.
-#do for all columns to check pattern
-
-SELECT AVG(`Adult Mortality`),
-AVG(`infant deaths`),
-AVG(`under-five deaths`)
-FROM worldlifeexpectancy
-;
-
-# infant > 30 and under five > 42
-#adding CASE statements for pattern recognition
+-- Categorized Mortality Statistics by Country
+-- Purpose: Adds categorical classifications for mortality rates alongside average life expectancy and GDP.
 
 SELECT Country,
 ROUND(AVG(`Life expectancy`), 0) AS avg_life_exp,
@@ -169,7 +156,7 @@ GROUP BY Country
 ORDER BY avg_life_exp DESC
 ;
 
-#exploring rolling totals for countries (ex. USA)
+-- This query calculates a rolling total of adult mortality for the United States over time, providing insights into cumulative trends in adult mortality by year.
 
 SELECT Country,
 Year,
