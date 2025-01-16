@@ -1,3 +1,7 @@
+-- World Population Data Cleaning and Exploratory Project
+-- mySQL: querying, CTEs, JOINS, subqueries
+-- This project focuses on cleaning and analyzing global population data to explore critical patterns and trends, with a particular emphasis on life expectancy, GDP, and mortality metrics.
+
 #checking for duplicates based on creating unique identifiers using the `country` and `year` columns and filtering data where the COUNT is >1
 
 SELECT Country,
