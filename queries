@@ -83,7 +83,7 @@ ROUND(MAX(`Life expectancy`), 0) AS max_life_exp,
 ROUND(MAX(`Life expectancy`) - MIN(`Life expectancy`), 0) AS life_exp_diff
 FROM worldlifeexpectancy
 GROUP BY Country
-HAVING min_life_exp <> 0
+HAVING min_life_exp <> 0 #filters out records where the minimum or maximum life expectancy is zero
 AND max_life_exp <> 0
 ORDER BY life_exp_diff DESC
 ;
@@ -94,7 +94,7 @@ ORDER BY life_exp_diff DESC
 SELECT Year,
 ROUND(AVG(`Life expectancy`), 0)
 FROM worldlifeexpectancy
-WHERE `Life expectancy` <> 0
+WHERE `Life expectancy` <> 0 #filters out rows where the life expectancy value is zero
 GROUP BY Year
 ORDER BY Year
 ;
@@ -137,13 +137,16 @@ ORDER BY avg_life_exp DESC
 SELECT Country,
 ROUND(AVG(`Life expectancy`), 0) AS avg_life_exp,
 ROUND(AVG(GDP), 0) AS avg_gdp,
-CASE
+#if average adult mortality is greater than 164, it is classified as "high adult death"; otherwise, "low adult death"
+CASE 
 	WHEN ROUND(AVG(`Adult Mortality`), 0) > 164 THEN 'high adult death' ELSE 'low adult death'
 END AS avg_adult_mort,
-CASE
+#if average infant deaths are greater than 30, it is classified as "high infant death"; otherwise, "low infant death"
+CASE 
 	WHEN ROUND(AVG(`infant deaths`), 1) > 30 THEN 'high infant death' ELSE 'low infant death'
 END AS avg_inf_death,
-CASE
+#if average under-five deaths are greater than 42, it is classified as "high under5 death"; otherwise, "low under5 death"
+CASE 
 	WHEN ROUND(AVG(`under-five deaths`), 1) > 42 THEN 'high under5 death' ELSE 'low under5 death'
 END AS avg_under_5_death
 FROM worldlifeexpectancy
@@ -161,7 +164,7 @@ ORDER BY avg_life_exp DESC
 SELECT Country,
 Year,
 `Adult Mortality`,
-SUM(`Adult Mortality`) OVER (PARTITION BY Country ORDER BY Year) AS rolling_total
+SUM(`Adult Mortality`) OVER (PARTITION BY Country ORDER BY Year) AS rolling_total #rolling total is calculated separately for each country
 FROM worldlifeexpectancy
 WHERE Country LIKE '%United States%'
 ORDER BY Country, Year
