@@ -1,5 +1,7 @@
 **Project Overview: Life Expectancy and Global Health Analysis**
+
 _Objective_
+
 This project focuses on cleaning, analyzing, and exploring global life expectancy data, GDP metrics, and mortality statistics to uncover trends and correlations that provide insights into global health and economic conditions. Using SQL queries and structured analysis, the project addresses key questions about life expectancy changes, economic factors, and mortality patterns across countries and over time.
 
 
